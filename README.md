@@ -63,25 +63,26 @@ Works out of the box with exports from BITalino/OpenSignals, Delsys EMGworks, Op
 
 ```
 src/
-  main.js              App entry, state management, event wiring
+  main.ts              App entry, state management, event wiring
+  types.ts             Shared TypeScript type definitions
   data/
-    emg-generator.js   Synthetic EMG signal generation
-    csv-parser.js       CSV file parser with format auto-detection
+    emg-generator.ts   Synthetic EMG signal generation
+    csv-parser.ts      CSV file parser with format auto-detection
   processing/
-    rms.js             RMS envelope computation
-    contractions.js    Threshold-based contraction detection + statistics
+    rms.ts             RMS envelope computation
+    contractions.ts    Threshold-based contraction detection + statistics
   viz/
-    chart.js           Main chart controller (D3.js)
-    waveform.js        Raw EMG trace rendering
-    envelope.js        RMS envelope overlay
-    threshold.js       Draggable threshold line
-    regions.js         Contraction highlight regions
-    scales.js          D3 scale construction
-    legend.js          Interactive legend
+    chart.ts           Main chart controller (D3.js)
+    waveform.ts        Raw EMG trace rendering
+    envelope.ts        RMS envelope overlay
+    threshold.ts       Draggable threshold line
+    regions.ts         Contraction highlight regions
+    scales.ts          D3 scale construction
+    legend.ts          Interactive legend
   ui/
-    layout.js          Page structure
-    controls.js        Control bar (sliders, buttons, dropdowns)
-    stats.js           Statistics cards
+    layout.ts          Page structure
+    controls.ts        Control bar (sliders, buttons, dropdowns)
+    stats.ts           Statistics cards
 ```
 
 ## `knowledge/` Directory
@@ -100,12 +101,23 @@ The [`knowledge/`](./knowledge/) folder contains structured notes on EMG analysi
 
 These notes are useful both as project documentation and as a standalone reference for anyone learning about EMG.
 
+## Docker
+
+Build and run the app in a container:
+
+```sh
+docker build -t emg-viz .
+docker run -p 8080:80 emg-viz
+```
+
+Opens at `http://localhost:8080`.
+
 ## Built With
 
 - [D3.js](https://d3js.org/) — charting and data visualization
 - [Vite](https://vite.dev/) — build tooling
 - [Tailwind CSS](https://tailwindcss.com/) — styling
-- Vanilla JavaScript — no framework
+- [TypeScript](https://www.typescriptlang.org/) — no framework
 
 ## License
 
