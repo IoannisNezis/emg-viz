@@ -4,6 +4,8 @@ A browser-based tool for visualizing and analyzing EMG (electromyography) signal
 
 > **This is an experimental project built with AI assistance (Claude).** It is not professionally developed medical or research software. Do not use it for clinical decisions. It exists for learning, prototyping, and exploring EMG signal processing concepts.
 
+<img width="1272" height="744" alt="20260215_23h14m37s_grim" src="https://github.com/user-attachments/assets/eb70625a-5990-4710-bae8-f5c51cd94385" />
+
 ## What is EMG?
 
 When you flex a muscle, your motor neurons fire electrical impulses that travel along muscle fibers. An EMG sensor on the skin picks up the combined electrical activity as a noisy, burst-like voltage signal. Analyzing that signal tells you *when* a muscle contracted, *how hard*, and *for how long*.
