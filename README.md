@@ -38,6 +38,19 @@ This app takes that raw signal — either from a file or generated synthetically
 - Mean and peak RMS amplitude
 - Current threshold value
 
+## Sample Data
+
+The [`sample-data/`](./sample-data/) directory contains real EMG recordings ready to load:
+
+| File | Source | Content | Sample Rate |
+|---|---|---|---|
+| `emg_healthy.txt` | PhysioNet emgdb | Tibialis anterior, healthy subject | 4 kHz |
+| `emg_myopathy.txt` | PhysioNet emgdb | Tibialis anterior, polymyositis | 4 kHz |
+| `emg_neuropathy.txt` | PhysioNet emgdb | Tibialis anterior, L5 radiculopathy | 4 kHz |
+| `emg_gestures_subject01.txt` | UCI EMG Gestures | 8-channel forearm sEMG, 7 hand gestures | 200 Hz |
+
+All files are open-access (ODC-BY / CC BY 4.0). See [`sample-data/README.md`](./sample-data/README.md) for details.
+
 ## Quick Start
 
 ```sh
