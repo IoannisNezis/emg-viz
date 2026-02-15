@@ -2,7 +2,15 @@
  * Render summary statistics card grid.
  */
 
-const STAT_DEFS = [
+import type { Statistics } from "../types.ts";
+
+interface StatDef {
+  key: keyof Statistics | "threshold";
+  label: string;
+  format: (v: number) => string;
+}
+
+const STAT_DEFS: StatDef[] = [
   { key: "contractionCount", label: "Contractions", format: (v) => String(v) },
   { key: "averageDurationMs", label: "Avg Duration", format: (v) => `${Math.round(v)} ms` },
   { key: "peakRms", label: "Peak RMS", format: (v) => `${v.toFixed(3)} V` },
@@ -11,8 +19,8 @@ const STAT_DEFS = [
   { key: "threshold", label: "Threshold", format: (v) => `${v.toFixed(3)} V` },
 ];
 
-export function updateStats(container, stats, threshold) {
-  const data = { ...stats, threshold };
+export function updateStats(container: HTMLElement, stats: Statistics, threshold: number): void {
+  const data: Statistics & { threshold: number } = { ...stats, threshold };
 
   container.innerHTML = STAT_DEFS.map(
     (def) => `

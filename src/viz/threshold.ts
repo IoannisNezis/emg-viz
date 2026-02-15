@@ -1,12 +1,21 @@
 import * as d3 from "d3";
+import type { Scales } from "./scales.ts";
+
+type Layer = d3.Selection<SVGGElement, unknown, null, undefined>;
 
 /**
  * Render the draggable threshold line.
  */
-export function renderThreshold(layer, threshold, scales, chartWidth, onThresholdChange) {
+export function renderThreshold(
+  layer: Layer,
+  threshold: number,
+  scales: Scales,
+  chartWidth: number,
+  onThresholdChange: (value: number) => void,
+): void {
   const { y } = scales;
 
-  let group = layer.selectAll(".threshold-group").data([threshold]);
+  let group = layer.selectAll<SVGGElement, number>(".threshold-group").data([threshold]);
 
   const groupEnter = group
     .enter()
@@ -58,11 +67,11 @@ export function renderThreshold(layer, threshold, scales, chartWidth, onThreshol
 
   // Drag behavior
   const drag = d3
-    .drag()
+    .drag<SVGGElement, number>()
     .on("start", function () {
       d3.select(this).classed("dragging", true);
     })
-    .on("drag", function (event) {
+    .on("drag", function (event: d3.D3DragEvent<SVGGElement, number, number>) {
       const [yDomain0, yDomain1] = y.domain();
       const newThreshold = Math.max(
         Math.min(y.invert(event.y), yDomain1),
@@ -78,9 +87,14 @@ export function renderThreshold(layer, threshold, scales, chartWidth, onThreshol
 }
 
 /**
- * Quick positional update during drag (no re-bindind data/drag).
+ * Quick positional update during drag (no re-binding data/drag).
  */
-export function updateThresholdPosition(layer, threshold, scales, chartWidth) {
+export function updateThresholdPosition(
+  layer: Layer,
+  threshold: number,
+  scales: Scales,
+  chartWidth: number,
+): void {
   const { y } = scales;
   const yPos = y(threshold);
 

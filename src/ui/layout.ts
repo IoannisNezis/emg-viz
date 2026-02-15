@@ -1,7 +1,15 @@
 /**
  * Build the app DOM structure.
  */
-export function buildLayout(root) {
+
+export interface LayoutRefs {
+  controls: HTMLElement;
+  chartContainer: HTMLElement;
+  stats: HTMLElement;
+  subtitle: HTMLElement;
+}
+
+export function buildLayout(root: HTMLElement): LayoutRefs {
   root.innerHTML = `
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-5">
       <header class="flex items-center gap-3">
@@ -20,9 +28,9 @@ export function buildLayout(root) {
   `;
 
   return {
-    controls: root.querySelector("#controls"),
-    chartContainer: root.querySelector("#chart-container"),
-    stats: root.querySelector("#stats"),
-    subtitle: root.querySelector("#subtitle"),
+    controls: root.querySelector("#controls")!,
+    chartContainer: root.querySelector("#chart-container")!,
+    stats: root.querySelector("#stats")!,
+    subtitle: root.querySelector("#subtitle")!,
   };
 }

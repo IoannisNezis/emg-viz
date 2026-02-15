@@ -2,16 +2,58 @@
  * Build the control bar UI.
  */
 
-const METHODS = {
+import type { AppMode, ThresholdMethod } from "../types.ts";
+
+interface MethodConfig {
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  default: number;
+}
+
+const METHODS: Record<ThresholdMethod, MethodConfig> = {
   median: { label: "× Median", min: 1.2, max: 5, step: 0.1, default: 2 },
   mad: { label: "Median + k·MAD", min: 1, max: 10, step: 0.5, default: 3 },
   manual: { label: "Manual (drag)", min: 0, max: 0, step: 0, default: 0 },
 };
 
+export interface ControlsOptions {
+  windowSizeMs: number;
+  durationMs: number;
+  thresholdMethod: ThresholdMethod;
+  thresholdValue: number;
+  onWindowSizeChange: (ms: number) => void;
+  onThresholdSettingChange: (method: ThresholdMethod, value: number) => void;
+  onDurationChange: (ms: number) => void;
+  onRegenerate: () => void;
+  onFileUpload: (file: File) => void;
+  onChannelChange: (index: number) => void;
+  onBackToDemo: () => void;
+}
+
+export interface ControlsAPI {
+  setMethod: (method: ThresholdMethod) => void;
+  setMode: (mode: AppMode) => void;
+  setChannels: (channelNames: string[]) => void;
+}
+
 export function buildControls(
-  container,
-  { windowSizeMs, durationMs, thresholdMethod, thresholdValue, onWindowSizeChange, onThresholdSettingChange, onDurationChange, onRegenerate, onFileUpload, onChannelChange, onBackToDemo },
-) {
+  container: HTMLElement,
+  {
+    windowSizeMs,
+    durationMs,
+    thresholdMethod,
+    thresholdValue,
+    onWindowSizeChange,
+    onThresholdSettingChange,
+    onDurationChange,
+    onRegenerate,
+    onFileUpload,
+    onChannelChange,
+    onBackToDemo,
+  }: ControlsOptions,
+): ControlsAPI {
   container.innerHTML = `
     <div class="flex items-center gap-2">
       <label class="text-xs text-slate-400" for="rms-window">RMS Window</label>
@@ -99,30 +141,30 @@ export function buildControls(
     <input id="file-input" type="file" accept=".csv,.txt,.tsv" class="hidden" />
   `;
 
-  const methodSelect = container.querySelector("#threshold-method");
-  const sliderGroup = container.querySelector("#threshold-slider-group");
-  const slider = container.querySelector("#threshold-value");
-  const label = container.querySelector("#threshold-value-label");
-  const demoControls = container.querySelector("#demo-controls");
-  const fileControls = container.querySelector("#file-controls");
-  const channelPicker = container.querySelector("#channel-picker");
-  const channelSelect = container.querySelector("#channel-select");
-  const fileInput = container.querySelector("#file-input");
+  const methodSelect = container.querySelector("#threshold-method") as HTMLSelectElement;
+  const sliderGroup = container.querySelector("#threshold-slider-group") as HTMLElement;
+  const slider = container.querySelector("#threshold-value") as HTMLInputElement;
+  const label = container.querySelector("#threshold-value-label") as HTMLElement;
+  const demoControls = container.querySelector("#demo-controls") as HTMLElement;
+  const fileControls = container.querySelector("#file-controls") as HTMLElement;
+  const channelPicker = container.querySelector("#channel-picker") as HTMLElement;
+  const channelSelect = container.querySelector("#channel-select") as HTMLSelectElement;
+  const fileInput = container.querySelector("#file-input") as HTMLInputElement;
 
-  function updateSliderVisibility(method) {
+  function updateSliderVisibility(method: ThresholdMethod): void {
     if (method === "manual") {
       sliderGroup.classList.add("hidden");
     } else {
       sliderGroup.classList.remove("hidden");
       const cfg = METHODS[method];
-      slider.min = cfg.min;
-      slider.max = cfg.max;
-      slider.step = cfg.step;
-      slider.value = cfg.default;
+      slider.min = String(cfg.min);
+      slider.max = String(cfg.max);
+      slider.step = String(cfg.step);
+      slider.value = String(cfg.default);
     }
   }
 
-  function updateLabel(method, value) {
+  function updateLabel(method: ThresholdMethod, value: number): void {
     if (method === "median") {
       label.textContent = `${value}×`;
     } else if (method === "mad") {
@@ -135,17 +177,17 @@ export function buildControls(
   updateLabel(thresholdMethod, thresholdValue);
 
   // RMS window
-  const rmsSlider = container.querySelector("#rms-window");
-  const rmsVal = container.querySelector("#rms-window-val");
+  const rmsSlider = container.querySelector("#rms-window") as HTMLInputElement;
+  const rmsVal = container.querySelector("#rms-window-val") as HTMLElement;
   rmsSlider.addEventListener("input", (e) => {
-    const v = Number(e.target.value);
+    const v = Number((e.target as HTMLInputElement).value);
     rmsVal.textContent = `${v} ms`;
     onWindowSizeChange(v);
   });
 
   // Threshold method change
   methodSelect.addEventListener("change", (e) => {
-    const method = e.target.value;
+    const method = (e.target as HTMLSelectElement).value as ThresholdMethod;
     updateSliderVisibility(method);
     const value = method === "manual" ? 0 : METHODS[method].default;
     updateLabel(method, value);
@@ -154,46 +196,46 @@ export function buildControls(
 
   // Threshold value slider
   slider.addEventListener("input", (e) => {
-    const value = Number(e.target.value);
-    const method = methodSelect.value;
+    const value = Number((e.target as HTMLInputElement).value);
+    const method = methodSelect.value as ThresholdMethod;
     updateLabel(method, value);
     onThresholdSettingChange(method, value);
   });
 
   // Duration
-  container.querySelector("#duration-select").addEventListener("change", (e) => {
-    onDurationChange(Number(e.target.value));
+  container.querySelector("#duration-select")!.addEventListener("change", (e) => {
+    onDurationChange(Number((e.target as HTMLSelectElement).value));
   });
 
   // Regenerate
-  container.querySelector("#btn-regenerate").addEventListener("click", onRegenerate);
+  container.querySelector("#btn-regenerate")!.addEventListener("click", onRegenerate);
 
   // Upload CSV
-  container.querySelector("#btn-upload").addEventListener("click", () => {
+  container.querySelector("#btn-upload")!.addEventListener("click", () => {
     fileInput.click();
   });
 
   fileInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (file) onFileUpload(file);
     fileInput.value = ""; // allow re-uploading the same file
   });
 
   // Channel select
   channelSelect.addEventListener("change", (e) => {
-    onChannelChange(Number(e.target.value));
+    onChannelChange(Number((e.target as HTMLSelectElement).value));
   });
 
   // Back to demo
-  container.querySelector("#btn-back-demo").addEventListener("click", onBackToDemo);
+  container.querySelector("#btn-back-demo")!.addEventListener("click", onBackToDemo);
 
   return {
-    setMethod(method) {
+    setMethod(method: ThresholdMethod) {
       methodSelect.value = method;
       updateSliderVisibility(method);
     },
 
-    setMode(mode) {
+    setMode(mode: AppMode) {
       if (mode === "file") {
         demoControls.classList.add("hidden");
         fileControls.classList.remove("hidden");
@@ -204,7 +246,7 @@ export function buildControls(
       }
     },
 
-    setChannels(channelNames) {
+    setChannels(channelNames: string[]) {
       if (channelNames.length > 1) {
         channelPicker.classList.remove("hidden");
         channelSelect.innerHTML = channelNames

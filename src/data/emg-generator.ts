@@ -5,10 +5,12 @@
  * separated by low-amplitude baseline noise.
  */
 
+import type { Activation, EMGData } from "../types.ts";
+
 const EMG_FREQUENCIES = [20, 40, 70, 100, 150, 200]; // Hz
 
 /** Box-Muller transform — returns a standard-normal random value. */
-function randn() {
+function randn(): number {
   const u1 = Math.random();
   const u2 = Math.random();
   return Math.sqrt(-2 * Math.log(u1 || 1e-30)) * Math.cos(2 * Math.PI * u2);
@@ -18,7 +20,7 @@ function randn() {
  * Half-Hann cosine ramp of length `n` samples.
  * rampUp=true  → 0→1,  rampUp=false → 1→0
  */
-function hannRamp(n, rampUp) {
+function hannRamp(n: number, rampUp: boolean): Float64Array {
   const ramp = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     const t = i / (n - 1 || 1);
@@ -31,26 +33,22 @@ function hannRamp(n, rampUp) {
 
 /**
  * Generate a synthetic EMG signal.
- *
- * @param {object} opts
- * @param {number} opts.durationMs   Total duration in milliseconds (default 5000)
- * @param {number} opts.sampleRateHz Sample rate in Hz (default 1000)
- * @param {Array}  opts.activations  Array of {startMs, endMs, intensity 0-1}
- * @returns {{ samples: Float64Array, sampleRateHz: number, durationMs: number }}
  */
 export function generateEMG({
   durationMs = 5000,
   sampleRateHz = 1000,
   activations,
-} = {}) {
+}: {
+  durationMs?: number;
+  sampleRateHz?: number;
+  activations?: Activation[];
+} = {}): EMGData {
   const totalSamples = Math.round((durationMs / 1000) * sampleRateHz);
   const samples = new Float64Array(totalSamples);
   const rampSamples = Math.round(0.05 * sampleRateHz); // 50 ms ramp
 
   // Default activations: 4 bursts at varying intensities
-  if (!activations) {
-    activations = defaultActivations(durationMs);
-  }
+  const acts = activations ?? defaultActivations(durationMs);
 
   // 1. Fill with low-amplitude baseline noise
   const baselineAmplitude = 0.05; // V
@@ -59,7 +57,7 @@ export function generateEMG({
   }
 
   // 2. Overlay each activation burst
-  for (const act of activations) {
+  for (const act of acts) {
     const startSample = Math.round((act.startMs / 1000) * sampleRateHz);
     const endSample = Math.min(
       Math.round((act.endMs / 1000) * sampleRateHz),
@@ -101,14 +99,14 @@ export function generateEMG({
   return { samples, sampleRateHz, durationMs };
 }
 
-function defaultActivations(durationMs) {
+function defaultActivations(durationMs: number): Activation[] {
   // Scale burst count so duty cycle stays ~25-35% regardless of duration
   const count = Math.max(2, Math.round(durationMs / 1500));
   const maxBurstMs = Math.min(400, durationMs / (count * 3)); // leave ≥2/3 as rest
   const minBurstMs = Math.min(120, maxBurstMs * 0.4);
   const gap = durationMs / (count + 1);
 
-  const acts = [];
+  const acts: Activation[] = [];
   for (let i = 0; i < count; i++) {
     const center = gap * (i + 1);
     const halfDur = minBurstMs + Math.random() * (maxBurstMs - minBurstMs);
@@ -124,7 +122,7 @@ function defaultActivations(durationMs) {
 /**
  * Generate a time axis array in milliseconds.
  */
-export function generateTimeAxis(sampleCount, sampleRateHz) {
+export function generateTimeAxis(sampleCount: number, sampleRateHz: number): Float64Array {
   const time = new Float64Array(sampleCount);
   const dtMs = 1000 / sampleRateHz;
   for (let i = 0; i < sampleCount; i++) {

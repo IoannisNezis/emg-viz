@@ -1,16 +1,32 @@
 import "./style.css";
-import { generateEMG, generateTimeAxis } from "./data/emg-generator.js";
-import { parseCSV } from "./data/csv-parser.js";
-import { calculateRMS, msToSamples } from "./processing/rms.js";
-import { detectContractions, computeStats } from "./processing/contractions.js";
-import { createChart } from "./viz/chart.js";
-import { buildLayout } from "./ui/layout.js";
-import { buildControls } from "./ui/controls.js";
-import { updateStats } from "./ui/stats.js";
+import { generateEMG, generateTimeAxis } from "./data/emg-generator.ts";
+import { parseCSV } from "./data/csv-parser.ts";
+import { calculateRMS, msToSamples } from "./processing/rms.ts";
+import { detectContractions, computeStats } from "./processing/contractions.ts";
+import { createChart } from "./viz/chart.ts";
+import { buildLayout } from "./ui/layout.ts";
+import { buildControls } from "./ui/controls.ts";
+import { updateStats } from "./ui/stats.ts";
+import type { AppMode, EMGData, ThresholdMethod } from "./types.ts";
 
 // ── State ────────────────────────────────────────────────────────
-const state = {
-  mode: "demo", // "demo" | "file"
+interface AppState {
+  mode: AppMode;
+  emgData: EMGData | null;
+  timeAxis: Float64Array | null;
+  rmsValues: Float64Array | null;
+  threshold: number;
+  contractions: ReturnType<typeof detectContractions>;
+  windowSizeMs: number;
+  durationMs: number;
+  thresholdMethod: ThresholdMethod;
+  thresholdValue: number;
+  fileText: string | null;
+  fileName: string | null;
+}
+
+const state: AppState = {
+  mode: "demo",
   emgData: null,
   timeAxis: null,
   rmsValues: null,
@@ -18,14 +34,14 @@ const state = {
   contractions: [],
   windowSizeMs: 100,
   durationMs: 5000,
-  thresholdMethod: "median", // "median" | "mad" | "manual"
-  thresholdValue: 2,         // multiplier for the chosen method
-  fileText: null,             // raw CSV text for channel switching
+  thresholdMethod: "median",
+  thresholdValue: 2,
+  fileText: null,
   fileName: null,
 };
 
 // ── DOM ──────────────────────────────────────────────────────────
-const app = document.getElementById("app");
+const app = document.getElementById("app")!;
 const { controls, chartContainer, stats, subtitle } = buildLayout(app);
 
 // ── Chart ────────────────────────────────────────────────────────
@@ -50,7 +66,7 @@ const controlsApi = buildControls(controls, {
 
 // ── Handlers ─────────────────────────────────────────────────────
 
-function handleThresholdDrag(newThreshold) {
+function handleThresholdDrag(newThreshold: number): void {
   state.threshold = newThreshold;
   state.thresholdMethod = "manual";
   controlsApi.setMethod("manual");
@@ -61,14 +77,14 @@ function handleThresholdDrag(newThreshold) {
   });
 }
 
-function handleWindowSizeChange(ms) {
+function handleWindowSizeChange(ms: number): void {
   state.windowSizeMs = ms;
   recomputeRMS();
   applyThreshold();
   fullRedraw();
 }
 
-function handleThresholdSettingChange(method, value) {
+function handleThresholdSettingChange(method: ThresholdMethod, value: number): void {
   state.thresholdMethod = method;
   state.thresholdValue = value;
   applyThreshold();
@@ -79,20 +95,20 @@ function handleThresholdSettingChange(method, value) {
   });
 }
 
-function handleDurationChange(ms) {
+function handleDurationChange(ms: number): void {
   state.durationMs = ms;
   regenerateSignal();
 }
 
-function handleRegenerate() {
+function handleRegenerate(): void {
   regenerateSignal();
 }
 
-function handleFileUpload(file) {
+function handleFileUpload(file: File): void {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      state.fileText = e.target.result;
+      state.fileText = (e.target as FileReader).result as string;
       state.fileName = file.name;
       const parsed = parseCSV(state.fileText);
       state.mode = "file";
@@ -101,23 +117,23 @@ function handleFileUpload(file) {
       subtitle.textContent = file.name;
       loadSignal(parsed);
     } catch (err) {
-      alert(`Failed to parse CSV: ${err.message}`);
+      alert(`Failed to parse CSV: ${(err as Error).message}`);
     }
   };
   reader.readAsText(file);
 }
 
-function handleChannelChange(channelIndex) {
+function handleChannelChange(channelIndex: number): void {
   if (!state.fileText) return;
   try {
     const parsed = parseCSV(state.fileText, channelIndex);
     loadSignal(parsed);
   } catch (err) {
-    alert(`Failed to parse channel: ${err.message}`);
+    alert(`Failed to parse channel: ${(err as Error).message}`);
   }
 }
 
-function handleBackToDemo() {
+function handleBackToDemo(): void {
   state.mode = "demo";
   state.fileText = null;
   state.fileName = null;
@@ -128,7 +144,7 @@ function handleBackToDemo() {
 
 // ── Processing ───────────────────────────────────────────────────
 
-function loadSignal(emgData) {
+function loadSignal(emgData: EMGData): void {
   state.emgData = emgData;
   state.timeAxis = generateTimeAxis(
     emgData.samples.length,
@@ -139,7 +155,7 @@ function loadSignal(emgData) {
   fullRedraw();
 }
 
-function regenerateSignal() {
+function regenerateSignal(): void {
   const emgData = generateEMG({
     durationMs: state.durationMs,
     sampleRateHz: 1000,
@@ -147,18 +163,18 @@ function regenerateSignal() {
   loadSignal(emgData);
 }
 
-function recomputeRMS() {
+function recomputeRMS(): void {
   const windowSamples = msToSamples(
     state.windowSizeMs,
-    state.emgData.sampleRateHz,
+    state.emgData!.sampleRateHz,
   );
-  state.rmsValues = calculateRMS(state.emgData.samples, windowSamples);
+  state.rmsValues = calculateRMS(state.emgData!.samples, windowSamples);
 }
 
-function applyThreshold() {
+function applyThreshold(): void {
   if (state.thresholdMethod === "manual") return;
 
-  const rms = state.rmsValues;
+  const rms = state.rmsValues!;
   const n = rms.length;
 
   // Median RMS — robust noise-floor estimate (unaffected by bursts)
@@ -175,36 +191,36 @@ function applyThreshold() {
   }
 }
 
-function updateContractionsAndStats() {
+function updateContractionsAndStats(): void {
   state.contractions = detectContractions(
-    state.rmsValues,
+    state.rmsValues!,
     state.threshold,
-    state.emgData.sampleRateHz,
+    state.emgData!.sampleRateHz,
   );
-  const s = computeStats(state.contractions, state.rmsValues);
+  const s = computeStats(state.contractions, state.rmsValues!);
   updateStats(stats, s, state.threshold);
 }
 
-function fullRedraw() {
+function fullRedraw(): void {
   updateContractionsAndStats();
   chart.update({
-    timeAxis: state.timeAxis,
-    samples: state.emgData.samples,
-    rmsValues: state.rmsValues,
+    timeAxis: state.timeAxis!,
+    samples: state.emgData!.samples,
+    rmsValues: state.rmsValues!,
     threshold: state.threshold,
     contractions: state.contractions,
   });
 }
 
 // ── Resize ───────────────────────────────────────────────────────
-let resizeTimer;
+let resizeTimer: ReturnType<typeof setTimeout>;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     chart.resize({
-      timeAxis: state.timeAxis,
-      samples: state.emgData.samples,
-      rmsValues: state.rmsValues,
+      timeAxis: state.timeAxis!,
+      samples: state.emgData!.samples,
+      rmsValues: state.rmsValues!,
       threshold: state.threshold,
       contractions: state.contractions,
     });

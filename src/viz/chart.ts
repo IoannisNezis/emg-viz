@@ -1,17 +1,27 @@
 import * as d3 from "d3";
-import { createScales } from "./scales.js";
-import { renderWaveform } from "./waveform.js";
-import { renderEnvelope } from "./envelope.js";
-import { renderThreshold, updateThresholdPosition } from "./threshold.js";
-import { renderRegions } from "./regions.js";
-import { renderLegend } from "./legend.js";
+import { createScales, type Scales } from "./scales.ts";
+import { renderWaveform } from "./waveform.ts";
+import { renderEnvelope } from "./envelope.ts";
+import { renderThreshold, updateThresholdPosition } from "./threshold.ts";
+import { renderRegions } from "./regions.ts";
+import { renderLegend } from "./legend.ts";
+import type { ChartData, Contraction } from "../types.ts";
 
 const MARGIN = { top: 24, right: 60, bottom: 40, left: 55 };
+
+export interface ChartAPI {
+  update(data: ChartData): void;
+  updateContractions(data: { threshold: number; contractions: Contraction[] }): void;
+  resize(data: ChartData): void;
+}
 
 /**
  * Create the chart and return an API object for updates.
  */
-export function createChart(container, { onThresholdChange }) {
+export function createChart(
+  container: HTMLElement,
+  { onThresholdChange }: { onThresholdChange: (value: number) => void },
+): ChartAPI {
   const svg = d3
     .select(container)
     .append("svg")
@@ -19,7 +29,6 @@ export function createChart(container, { onThresholdChange }) {
     .attr("preserveAspectRatio", "xMidYMid meet");
 
   // Layer groups in z-order
-  const defs = svg.append("defs");
   const gRoot = svg.append("g").attr("class", "chart-root");
   const layers = {
     regions: gRoot.append("g").attr("class", "layer-regions"),
@@ -32,7 +41,7 @@ export function createChart(container, { onThresholdChange }) {
     legend: gRoot.append("g").attr("class", "layer-legend"),
   };
 
-  let scales = null;
+  let scales: Scales | null = null;
   let chartWidth = 0;
   let chartHeight = 0;
 
@@ -47,26 +56,24 @@ export function createChart(container, { onThresholdChange }) {
     gRoot.attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
 
     layers.xAxis.attr("transform", `translate(0,${chartHeight})`);
-
-    return { totalWidth, totalHeight };
   }
 
-  const api = {
+  const api: ChartAPI = {
     /**
      * Full redraw — call when data or RMS window changes.
      */
     update({ timeAxis, samples, rmsValues, threshold, contractions }) {
       computeDimensions();
 
-      const timeExtent = [timeAxis[0], timeAxis[timeAxis.length - 1]];
-      const maxAmp = d3.max(samples, (d) => Math.abs(d)) * 1.15;
-      const ampExtent = [-maxAmp, maxAmp];
+      const timeExtent: [number, number] = [timeAxis[0], timeAxis[timeAxis.length - 1]];
+      const maxAmp = (d3.max(samples, (d) => Math.abs(d)) ?? 1) * 1.15;
+      const ampExtent: [number, number] = [-maxAmp, maxAmp];
 
       scales = createScales(chartWidth, chartHeight, timeExtent, ampExtent);
 
       // Axes
-      layers.xAxis.call(scales.xAxis);
-      layers.yAxis.call(scales.yAxis);
+      layers.xAxis.call(scales.xAxis as unknown as (selection: d3.Selection<SVGGElement, unknown, null, undefined>) => void);
+      layers.yAxis.call(scales.yAxis as unknown as (selection: d3.Selection<SVGGElement, unknown, null, undefined>) => void);
 
       // Grid
       layers.grid.selectAll("*").remove();
@@ -74,11 +81,11 @@ export function createChart(container, { onThresholdChange }) {
         .append("g")
         .attr("class", "chart-grid")
         .attr("transform", `translate(0,${chartHeight})`)
-        .call(scales.xGrid);
+        .call(scales.xGrid as unknown as (selection: d3.Selection<SVGGElement, unknown, null, undefined>) => void);
       layers.grid
         .append("g")
         .attr("class", "chart-grid")
-        .call(scales.yGrid);
+        .call(scales.yGrid as unknown as (selection: d3.Selection<SVGGElement, unknown, null, undefined>) => void);
 
       // Data layers
       renderWaveform(layers.waveform, timeAxis, samples, scales);

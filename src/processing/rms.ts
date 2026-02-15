@@ -6,18 +6,14 @@
 /**
  * Convert a window size in ms to samples.
  */
-export function msToSamples(ms, sampleRateHz) {
+export function msToSamples(ms: number, sampleRateHz: number): number {
   return Math.max(1, Math.round((ms / 1000) * sampleRateHz));
 }
 
 /**
  * Calculate the RMS envelope of a signal using a sliding window.
- *
- * @param {Float64Array} samples       Input signal
- * @param {number}       windowSamples Window width in samples
- * @returns {Float64Array} RMS values (same length as input)
  */
-export function calculateRMS(samples, windowSamples) {
+export function calculateRMS(samples: Float64Array, windowSamples: number): Float64Array {
   const n = samples.length;
   const rms = new Float64Array(n);
   const w = Math.min(windowSamples, n);
@@ -25,10 +21,6 @@ export function calculateRMS(samples, windowSamples) {
 
   // Initial sum of squares for the first window position
   let sumSq = 0;
-  const firstEnd = Math.min(w, n);
-  for (let i = 0; i < firstEnd; i++) {
-    sumSq += samples[i] * samples[i];
-  }
 
   // Centered sliding window
   for (let center = 0; center < n; center++) {

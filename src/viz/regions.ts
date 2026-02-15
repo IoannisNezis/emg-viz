@@ -1,11 +1,19 @@
+import type { Contraction } from "../types.ts";
+import type { Scales } from "./scales.ts";
+
 /**
  * Render contraction highlight regions.
  */
-export function renderRegions(layer, contractions, scales, chartHeight) {
+export function renderRegions(
+  layer: d3.Selection<SVGGElement, unknown, null, undefined>,
+  contractions: Contraction[],
+  scales: Scales,
+  chartHeight: number,
+): void {
   const { x } = scales;
 
   // Rectangles
-  const rects = layer.selectAll(".contraction-rect").data(contractions, (d) => d.onsetMs);
+  const rects = layer.selectAll<SVGRectElement, Contraction>(".contraction-rect").data(contractions, (d) => String(d.onsetMs));
 
   rects
     .join(
@@ -37,8 +45,8 @@ export function renderRegions(layer, contractions, scales, chartHeight) {
 
   // Duration labels
   const labels = layer
-    .selectAll(".contraction-label")
-    .data(contractions, (d) => d.onsetMs);
+    .selectAll<SVGTextElement, Contraction>(".contraction-label")
+    .data(contractions, (d) => String(d.onsetMs));
 
   labels
     .join(

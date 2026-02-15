@@ -8,19 +8,17 @@
  * - Multi-channel support with channel name extraction
  */
 
+import type { ParsedCSV } from "../types.ts";
+
 /**
  * Parse CSV text into EMG data.
- *
- * @param {string} text  Raw CSV file contents
- * @param {number} [channel=0]  Index into numeric columns (0-based) to use as the signal
- * @returns {{ samples: Float64Array, sampleRateHz: number, durationMs: number, channelNames: string[], selectedChannel: number }}
  */
-export function parseCSV(text, channel = 0) {
+export function parseCSV(text: string, channel = 0): ParsedCSV {
   const lines = text.split(/\r?\n/);
 
   // Separate header/comment lines from data lines
-  const headerLines = [];
-  const dataLines = [];
+  const headerLines: string[] = [];
+  const dataLines: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -41,7 +39,7 @@ export function parseCSV(text, channel = 0) {
   const delimiter = detectDelimiter(dataLines[0]);
 
   // Detect column header row: if the first "data" line has non-numeric cells, treat it as headers
-  let columnHeaders = null;
+  let columnHeaders: string[] | null = null;
   const firstFields = dataLines[0].split(delimiter).map((s) => s.trim());
   const numericCount = firstFields.filter((f) => isNumeric(f)).length;
 
@@ -57,7 +55,7 @@ export function parseCSV(text, channel = 0) {
 
   // Parse all data rows into columns
   const colCount = dataLines[0].split(delimiter).length;
-  const rows = [];
+  const rows: number[][] = [];
 
   for (const line of dataLines) {
     const fields = line.split(delimiter).map((s) => s.trim());
@@ -71,7 +69,7 @@ export function parseCSV(text, channel = 0) {
   }
 
   // Build column arrays
-  const columns = Array.from({ length: colCount }, () => []);
+  const columns: number[][] = Array.from({ length: colCount }, () => []);
   for (const row of rows) {
     for (let c = 0; c < colCount; c++) {
       columns[c].push(row[c] ?? 0);
@@ -79,7 +77,7 @@ export function parseCSV(text, channel = 0) {
   }
 
   // Identify which columns are numeric signal data vs index/timestamp
-  const numericColIndices = [];
+  const numericColIndices: number[] = [];
   for (let c = 0; c < colCount; c++) {
     if (!isSequentialIndex(columns[c])) {
       numericColIndices.push(c);
@@ -110,19 +108,19 @@ export function parseCSV(text, channel = 0) {
 }
 
 /** Check if a line is a comment/metadata header. */
-function isCommentLine(line) {
+function isCommentLine(line: string): boolean {
   return line.startsWith("#") || line.startsWith("%") || line.startsWith("//");
 }
 
 /** Detect whether the file uses commas or tabs. */
-function detectDelimiter(line) {
+function detectDelimiter(line: string): string {
   const tabs = (line.match(/\t/g) || []).length;
   const commas = (line.match(/,/g) || []).length;
   return tabs > commas ? "\t" : ",";
 }
 
 /** Check if a string is a valid number. */
-function isNumeric(s) {
+function isNumeric(s: string): boolean {
   if (s === "") return false;
   return !isNaN(Number(s));
 }
@@ -131,7 +129,7 @@ function isNumeric(s) {
  * Detect if a column is a sequential integer index (0,1,2,... or 1,2,3,...).
  * Only filters it out if it's strictly sequential with step 1.
  */
-function isSequentialIndex(col) {
+function isSequentialIndex(col: number[]): boolean {
   if (col.length < 3) return false;
 
   // Check first few values for integer + sequential pattern
@@ -149,13 +147,8 @@ function isSequentialIndex(col) {
 
 /**
  * Scan header comment lines for sample rate patterns.
- * Looks for common patterns like:
- *   "sampling_rate": 1000
- *   Sample Rate = 1000
- *   1000 Hz
- *   Fs = 1000
  */
-function detectSampleRate(headerLines) {
+function detectSampleRate(headerLines: string[]): number | null {
   for (const line of headerLines) {
     // "sampling_rate": 1000  or  sampling_rate = 1000
     let m = line.match(/sampl(?:e|ing)[_ ]?rate[\s":=]+(\d+)/i);

@@ -1,17 +1,26 @@
 import * as d3 from "d3";
 
+interface LegendItem {
+  label: string;
+  color: string;
+  type: "line" | "line-thick" | "dashed" | "rect";
+}
+
 /**
  * Render chart legend in the top-right corner.
  */
-export function renderLegend(layer, chartWidth) {
-  const items = [
+export function renderLegend(
+  layer: d3.Selection<SVGGElement, unknown, null, undefined>,
+  chartWidth: number,
+): void {
+  const items: LegendItem[] = [
     { label: "Raw EMG", color: "var(--color-emg-raw)", type: "line" },
     { label: "RMS Envelope", color: "var(--color-emg-rms)", type: "line-thick" },
     { label: "Threshold", color: "var(--color-emg-threshold)", type: "dashed" },
     { label: "Contraction", color: "var(--color-emg-contraction)", type: "rect" },
   ];
 
-  let group = layer.selectAll(".legend-group").data([0]);
+  let group = layer.selectAll<SVGGElement, number>(".legend-group").data([0]);
   group = group
     .enter()
     .append("g")
@@ -33,7 +42,7 @@ export function renderLegend(layer, chartWidth) {
     .attr("rx", 4)
     .attr("fill", "oklch(0.21 0.01 260 / 0.85)");
 
-  const rows = group.selectAll(".legend-row").data(items, (d) => d.label);
+  const rows = group.selectAll<SVGGElement, LegendItem>(".legend-row").data(items, (d) => (d as LegendItem).label);
 
   const rowEnter = rows.enter().append("g").attr("class", "legend-row");
 
