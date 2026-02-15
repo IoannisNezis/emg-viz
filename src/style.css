@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-emg-raw: oklch(0.74 0.14 215);       /* sky-400 */
+  --color-emg-rms: oklch(0.78 0.17 75);         /* amber-500 */
+  --color-emg-threshold: oklch(0.64 0.24 25);   /* red-500 */
+  --color-emg-contraction: oklch(0.72 0.17 155); /* green-500 */
+  --color-panel: oklch(0.28 0.01 260);           /* slate-800 */
+  --color-surface: oklch(0.21 0.01 260);         /* slate-900 */
+}
+
+/* SVG axis styling */
+.chart-axis text {
+  fill: oklch(0.55 0.01 260);
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+}
+
+.chart-axis line,
+.chart-axis path {
+  stroke: oklch(0.35 0.01 260);
+}
+
+.chart-grid line {
+  stroke: oklch(0.3 0.01 260);
+  stroke-dasharray: 2 4;
+}
+
+.chart-grid path {
+  stroke: none;
+}
+
+/* Threshold hover/drag states */
+.threshold-hit-area {
+  cursor: ns-resize;
+}
+
+.threshold-group:hover .threshold-line,
+.threshold-group.dragging .threshold-line {
+  filter: drop-shadow(0 0 6px oklch(0.64 0.24 25 / 0.7));
+  stroke-width: 2.5;
+}
+
+.threshold-group:hover .threshold-label,
+.threshold-group.dragging .threshold-label {
+  opacity: 1;
+}
+
+/* Contraction region transitions */
+.contraction-rect {
+  transition:
+    opacity 200ms ease-out,
+    x 200ms ease-out,
+    width 200ms ease-out;
+}
+
+.contraction-label {
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
