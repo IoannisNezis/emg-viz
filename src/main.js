@@ -1,5 +1,6 @@
 import "./style.css";
 import { generateEMG, generateTimeAxis } from "./data/emg-generator.js";
+import { parseCSV } from "./data/csv-parser.js";
 import { calculateRMS, msToSamples } from "./processing/rms.js";
 import { detectContractions, computeStats } from "./processing/contractions.js";
 import { createChart } from "./viz/chart.js";
@@ -9,6 +10,7 @@ import { updateStats } from "./ui/stats.js";
 
 // ── State ────────────────────────────────────────────────────────
 const state = {
+  mode: "demo", // "demo" | "file"
   emgData: null,
   timeAxis: null,
   rmsValues: null,
@@ -18,11 +20,13 @@ const state = {
   durationMs: 5000,
   thresholdMethod: "median", // "median" | "mad" | "manual"
   thresholdValue: 2,         // multiplier for the chosen method
+  fileText: null,             // raw CSV text for channel switching
+  fileName: null,
 };
 
 // ── DOM ──────────────────────────────────────────────────────────
 const app = document.getElementById("app");
-const { controls, chartContainer, stats } = buildLayout(app);
+const { controls, chartContainer, stats, subtitle } = buildLayout(app);
 
 // ── Chart ────────────────────────────────────────────────────────
 const chart = createChart(chartContainer, {
@@ -39,6 +43,9 @@ const controlsApi = buildControls(controls, {
   onThresholdSettingChange: handleThresholdSettingChange,
   onDurationChange: handleDurationChange,
   onRegenerate: handleRegenerate,
+  onFileUpload: handleFileUpload,
+  onChannelChange: handleChannelChange,
+  onBackToDemo: handleBackToDemo,
 });
 
 // ── Handlers ─────────────────────────────────────────────────────
@@ -81,20 +88,63 @@ function handleRegenerate() {
   regenerateSignal();
 }
 
+function handleFileUpload(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      state.fileText = e.target.result;
+      state.fileName = file.name;
+      const parsed = parseCSV(state.fileText);
+      state.mode = "file";
+      controlsApi.setMode("file");
+      controlsApi.setChannels(parsed.channelNames);
+      subtitle.textContent = file.name;
+      loadSignal(parsed);
+    } catch (err) {
+      alert(`Failed to parse CSV: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleChannelChange(channelIndex) {
+  if (!state.fileText) return;
+  try {
+    const parsed = parseCSV(state.fileText, channelIndex);
+    loadSignal(parsed);
+  } catch (err) {
+    alert(`Failed to parse channel: ${err.message}`);
+  }
+}
+
+function handleBackToDemo() {
+  state.mode = "demo";
+  state.fileText = null;
+  state.fileName = null;
+  controlsApi.setMode("demo");
+  subtitle.textContent = "Synthetic EMG";
+  regenerateSignal();
+}
+
 // ── Processing ───────────────────────────────────────────────────
 
-function regenerateSignal() {
-  state.emgData = generateEMG({
-    durationMs: state.durationMs,
-    sampleRateHz: 1000,
-  });
+function loadSignal(emgData) {
+  state.emgData = emgData;
   state.timeAxis = generateTimeAxis(
-    state.emgData.samples.length,
-    state.emgData.sampleRateHz,
+    emgData.samples.length,
+    emgData.sampleRateHz,
   );
   recomputeRMS();
   applyThreshold();
   fullRedraw();
+}
+
+function regenerateSignal() {
+  const emgData = generateEMG({
+    durationMs: state.durationMs,
+    sampleRateHz: 1000,
+  });
+  loadSignal(emgData);
 }
 
 function recomputeRMS() {

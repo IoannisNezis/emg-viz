@@ -6,9 +6,9 @@ export function buildLayout(root) {
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-5">
       <header class="flex items-center gap-3">
         <h1 class="text-xl font-bold tracking-tight text-slate-100">
-          EMG Signal Analyzer
+          EMG Analyzer
         </h1>
-        <span class="text-xs text-slate-500 mt-0.5">Synthetic EMG Visualization</span>
+        <span id="subtitle" class="text-xs text-slate-500 mt-0.5">Synthetic EMG</span>
       </header>
 
       <div id="controls" class="flex flex-wrap items-center gap-4 rounded-lg bg-slate-800 px-4 py-3"></div>
@@ -23,5 +23,6 @@ export function buildLayout(root) {
     controls: root.querySelector("#controls"),
     chartContainer: root.querySelector("#chart-container"),
     stats: root.querySelector("#stats"),
+    subtitle: root.querySelector("#subtitle"),
   };
 }

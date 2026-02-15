@@ -10,7 +10,7 @@ const METHODS = {
 
 export function buildControls(
   container,
-  { windowSizeMs, durationMs, thresholdMethod, thresholdValue, onWindowSizeChange, onThresholdSettingChange, onDurationChange, onRegenerate },
+  { windowSizeMs, durationMs, thresholdMethod, thresholdValue, onWindowSizeChange, onThresholdSettingChange, onDurationChange, onRegenerate, onFileUpload, onChannelChange, onBackToDemo },
 ) {
   container.innerHTML = `
     <div class="flex items-center gap-2">
@@ -52,30 +52,62 @@ export function buildControls(
       <span id="threshold-value-label" class="text-xs text-slate-300 w-16"></span>
     </div>
 
-    <div class="flex items-center gap-2">
-      <label class="text-xs text-slate-400" for="duration-select">Duration</label>
-      <select
-        id="duration-select"
-        class="rounded bg-slate-700 text-xs text-slate-200 px-2 py-1 border border-slate-600"
+    <div id="demo-controls" class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-slate-400" for="duration-select">Duration</label>
+        <select
+          id="duration-select"
+          class="rounded bg-slate-700 text-xs text-slate-200 px-2 py-1 border border-slate-600"
+        >
+          <option value="3000" ${durationMs === 3000 ? "selected" : ""}>3 s</option>
+          <option value="5000" ${durationMs === 5000 ? "selected" : ""}>5 s</option>
+          <option value="10000" ${durationMs === 10000 ? "selected" : ""}>10 s</option>
+        </select>
+      </div>
+
+      <button
+        id="btn-regenerate"
+        class="rounded bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white px-3 py-1.5 transition-colors"
       >
-        <option value="3000" ${durationMs === 3000 ? "selected" : ""}>3 s</option>
-        <option value="5000" ${durationMs === 5000 ? "selected" : ""}>5 s</option>
-        <option value="10000" ${durationMs === 10000 ? "selected" : ""}>10 s</option>
-      </select>
+        Generate New Signal
+      </button>
+    </div>
+
+    <div id="file-controls" class="flex items-center gap-3 hidden">
+      <div id="channel-picker" class="flex items-center gap-2 hidden">
+        <label class="text-xs text-slate-400" for="channel-select">Channel</label>
+        <select
+          id="channel-select"
+          class="rounded bg-slate-700 text-xs text-slate-200 px-2 py-1 border border-slate-600"
+        ></select>
+      </div>
+
+      <button
+        id="btn-back-demo"
+        class="rounded bg-slate-600 hover:bg-slate-500 text-xs font-medium text-white px-3 py-1.5 transition-colors"
+      >
+        Back to Demo
+      </button>
     </div>
 
     <button
-      id="btn-regenerate"
-      class="rounded bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white px-3 py-1.5 transition-colors"
+      id="btn-upload"
+      class="rounded bg-emerald-600 hover:bg-emerald-500 text-xs font-medium text-white px-3 py-1.5 transition-colors ml-auto"
     >
-      Generate New Signal
+      Upload CSV
     </button>
+    <input id="file-input" type="file" accept=".csv,.txt,.tsv" class="hidden" />
   `;
 
   const methodSelect = container.querySelector("#threshold-method");
   const sliderGroup = container.querySelector("#threshold-slider-group");
   const slider = container.querySelector("#threshold-value");
   const label = container.querySelector("#threshold-value-label");
+  const demoControls = container.querySelector("#demo-controls");
+  const fileControls = container.querySelector("#file-controls");
+  const channelPicker = container.querySelector("#channel-picker");
+  const channelSelect = container.querySelector("#channel-select");
+  const fileInput = container.querySelector("#file-input");
 
   function updateSliderVisibility(method) {
     if (method === "manual") {
@@ -136,10 +168,51 @@ export function buildControls(
   // Regenerate
   container.querySelector("#btn-regenerate").addEventListener("click", onRegenerate);
 
+  // Upload CSV
+  container.querySelector("#btn-upload").addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) onFileUpload(file);
+    fileInput.value = ""; // allow re-uploading the same file
+  });
+
+  // Channel select
+  channelSelect.addEventListener("change", (e) => {
+    onChannelChange(Number(e.target.value));
+  });
+
+  // Back to demo
+  container.querySelector("#btn-back-demo").addEventListener("click", onBackToDemo);
+
   return {
     setMethod(method) {
       methodSelect.value = method;
       updateSliderVisibility(method);
+    },
+
+    setMode(mode) {
+      if (mode === "file") {
+        demoControls.classList.add("hidden");
+        fileControls.classList.remove("hidden");
+      } else {
+        demoControls.classList.remove("hidden");
+        fileControls.classList.add("hidden");
+        channelPicker.classList.add("hidden");
+      }
+    },
+
+    setChannels(channelNames) {
+      if (channelNames.length > 1) {
+        channelPicker.classList.remove("hidden");
+        channelSelect.innerHTML = channelNames
+          .map((name, i) => `<option value="${i}">${name}</option>`)
+          .join("");
+      } else {
+        channelPicker.classList.add("hidden");
+      }
     },
   };
 }
