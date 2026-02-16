@@ -2,6 +2,7 @@
 
 A browser-based tool for visualizing and analyzing EMG (electromyography) signals. Load a CSV recording from real hardware or explore with synthetic generated data — the app computes the RMS envelope in real time, detects muscle contractions via adaptive thresholding, and shows summary statistics.
 
+> [!CAUTION]
 > **This is an experimental project built with AI assistance (Claude).** It is not professionally developed medical or research software. Do not use it for clinical decisions. It exists for learning, prototyping, and exploring EMG signal processing concepts.
 
 <img width="1272" height="744" alt="20260215_23h14m37s_grim" src="https://github.com/user-attachments/assets/eb70625a-5990-4710-bae8-f5c51cd94385" />
