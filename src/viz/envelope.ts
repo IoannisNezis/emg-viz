@@ -3,6 +3,7 @@ import type { Scales } from "./scales.ts";
 
 /**
  * Render the RMS envelope as a smoothed <path>.
+ * Only emits points within the visible x-domain so zoom levels stay sharp.
  */
 export function renderEnvelope(
   layer: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -11,17 +12,30 @@ export function renderEnvelope(
   scales: Scales,
 ): void {
   const { x, y } = scales;
+  const [t0, t1] = x.domain();
 
-  // Downsample for performance
-  const step = Math.max(1, Math.floor(rmsValues.length / 5000));
+  // Visible index range (with 1-sample padding for edge continuity)
+  const totalDuration = timeAxis[timeAxis.length - 1] - timeAxis[0];
+  const startIdx = totalDuration > 0
+    ? Math.max(0, Math.floor((t0 - timeAxis[0]) / totalDuration * (timeAxis.length - 1)) - 1)
+    : 0;
+  const endIdx = totalDuration > 0
+    ? Math.min(timeAxis.length - 1, Math.ceil((t1 - timeAxis[0]) / totalDuration * (timeAxis.length - 1)) + 1)
+    : timeAxis.length - 1;
+
+  const visibleCount = endIdx - startIdx + 1;
+  const step = Math.max(1, Math.floor(visibleCount / 5000));
 
   const line = d3
     .line<number>()
-    .x((_, i) => x(timeAxis[i * step]))
-    .y((_, i) => y(rmsValues[i * step]))
+    .x((d) => x(timeAxis[d]))
+    .y((d) => y(rmsValues[d]))
     .curve(d3.curveBasis);
 
-  const data = Array.from({ length: Math.ceil(rmsValues.length / step) }, (_, i) => i);
+  const data: number[] = [];
+  for (let i = startIdx; i <= endIdx; i += step) {
+    data.push(i);
+  }
 
   const path = layer.selectAll<SVGPathElement, number[]>(".envelope-path").data([data]);
 

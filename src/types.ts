@@ -36,6 +36,7 @@ export interface ChartData {
   rmsValues: Float64Array;
   threshold: number;
   contractions: Contraction[];
+  viewDomain: [number, number] | null;
 }
 
 export type ThresholdMethod = "median" | "mad" | "manual";

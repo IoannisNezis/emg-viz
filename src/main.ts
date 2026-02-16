@@ -23,6 +23,7 @@ interface AppState {
   thresholdValue: number;
   fileText: string | null;
   fileName: string | null;
+  viewDomain: [number, number] | null;
 }
 
 const state: AppState = {
@@ -38,6 +39,7 @@ const state: AppState = {
   thresholdValue: 2,
   fileText: null,
   fileName: null,
+  viewDomain: null,
 };
 
 // ── DOM ──────────────────────────────────────────────────────────
@@ -47,6 +49,8 @@ const { controls, chartContainer, stats, subtitle } = buildLayout(app);
 // ── Chart ────────────────────────────────────────────────────────
 const chart = createChart(chartContainer, {
   onThresholdChange: handleThresholdDrag,
+  onZoom: handleZoom,
+  onZoomReset: handleZoomReset,
 });
 
 // ── Controls ─────────────────────────────────────────────────────
@@ -137,15 +141,27 @@ function handleBackToDemo(): void {
   state.mode = "demo";
   state.fileText = null;
   state.fileName = null;
+  state.viewDomain = null;
   controlsApi.setMode("demo");
   subtitle.textContent = "Synthetic EMG";
   regenerateSignal();
+}
+
+function handleZoom(start: number, end: number): void {
+  state.viewDomain = [start, end];
+  fullRedraw();
+}
+
+function handleZoomReset(): void {
+  state.viewDomain = null;
+  fullRedraw();
 }
 
 // ── Processing ───────────────────────────────────────────────────
 
 function loadSignal(emgData: EMGData): void {
   state.emgData = emgData;
+  state.viewDomain = null;
   state.timeAxis = generateTimeAxis(
     emgData.samples.length,
     emgData.sampleRateHz,
@@ -209,6 +225,7 @@ function fullRedraw(): void {
     rmsValues: state.rmsValues!,
     threshold: state.threshold,
     contractions: state.contractions,
+    viewDomain: state.viewDomain,
   });
 }
 
@@ -223,6 +240,7 @@ window.addEventListener("resize", () => {
       rmsValues: state.rmsValues!,
       threshold: state.threshold,
       contractions: state.contractions,
+      viewDomain: state.viewDomain,
     });
   }, 100);
 });

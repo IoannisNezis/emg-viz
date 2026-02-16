@@ -46,6 +46,22 @@
   opacity: 1;
 }
 
+/* Brush (drag-to-zoom) */
+.layer-brush .overlay {
+  cursor: crosshair;
+}
+
+.layer-brush .selection {
+  fill: oklch(0.65 0.15 265 / 0.2);
+  stroke: oklch(0.65 0.15 265);
+  stroke-width: 1;
+}
+
+/* Reset zoom button hover */
+.zoom-reset-btn:hover rect {
+  fill: oklch(0.38 0.02 260);
+}
+
 /* Contraction region transitions */
 .contraction-rect {
   transition:
